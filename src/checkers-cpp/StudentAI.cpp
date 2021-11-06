@@ -58,12 +58,12 @@ StudentAI::Node* StudentAI::makeNewNode(const Node& oldNode, int curPlayer)
 
 int StudentAI::recurseSim(Node* curNode, int depth, int curPlayer)
 {
+    int winner = -1;
     //first choose a random move, then check if that move has been chosen before. if so then call the function again with the previously
     //created child from curNode.
     //If not then create a new child for curNode, make a move and call the function again.
     //check if depth has exceeded max depth.
-    if(depth <= maxdepth)
-    {
+ 
         //this chooses the random x, y for the move (adjusted from profs random code to avoid making a new vector for no reason that I can think of.)
         int moveX = rand() % (curNode->moves.size());
         int moveY = rand() % (curNode->moves[moveX].size());
@@ -86,9 +86,15 @@ int StudentAI::recurseSim(Node* curNode, int depth, int curPlayer)
             //the isWin function is super wack, I'm not exactly sure how to call it yet to make this work
             //basically I'm not sure if we should call it with our player value of 2 that the studentAi constructor gives us
             //or with our curPlayer variable that keeps track of which player is which inside the recursion simulation. 
-            if(curNode->board.isWin(player))
+            if(curNode->board.isWin(player) == curPlayer)
             {
-
+                winner = curPlayer
+                return winner;
+            }
+            else
+            {
+                winner = curPlayer == 1 ? 2 : 1;
+                return winner;
             }
         } 
         
@@ -96,20 +102,16 @@ int StudentAI::recurseSim(Node* curNode, int depth, int curPlayer)
         //then makes the move on the new node's board then we call the function again passing that new node.
         //If this move has been taken before we call the function again, passing the already created node from the last time 
         //we chose this move. it also adds one to the depth counter and changes the current player to the other player.
-        recurseSim(curNode->children.at(moveKey), depth++, curPlayer = curPlayer == 1 ? 2:1);
+        winner = recurseSim(curNode->children.at(moveKey), depth++, curPlayer = curPlayer == 1 ? 2:1);
 
-    } else{
-        /*
-            we've exceeded max depth so check iswin() if we win return 1 if not 0.
-            for now maybe we just make a simple heuristic like number of our players - number of the opponents players and return 1 if 
-            ours is more.
-        */
-    }
+        //If we've returned from recurseSim, that means we know if this path led to a win or not, so time for back propogation.
+        curNode->visits++;
 
-    //just dummy variable rn to get it to compile.
-    int win = 0;
-
-    return win;
+        //If this player is the player that won then increment wins too.
+        if ((winner == 2 && curPlayer == 2) || (winner == 1 && curPlayer ==1))
+            curNode->wins++;
+        
+        return winner;
 }
 
 Move StudentAI::GetMove(Move move)
